@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deskport</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --sub: #6e6e73; --line: #e5e5ea;
+    --accent: #0a84ff; --ok: #34c759; --warn: #ff9f0a; --bad: #d93025; --chip: #e9e9ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000000; --card: #1c1c1e; --text: #f2f2f7; --sub: #98989f; --line: #2c2c2e; --chip: #2c2c2e; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: "Segoe UI Variable Text", "Segoe UI", "Yu Gothic UI", sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; user-select: none; }
+  header { padding: 22px 22px 8px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: .01em; }
+  .sub { color: var(--sub); font-size: 12.5px; margin-top: 2px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; background: var(--chip); border-radius: 999px; padding: 5px 12px 5px 10px; font-size: 12.5px; margin-top: 10px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sub); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  nav { display: flex; gap: 6px; padding: 8px 18px 0; }
+  nav button { flex: 1; border: 0; background: transparent; color: var(--sub); font: inherit; font-size: 14px; padding: 9px 0; border-radius: 999px; cursor: pointer; }
+  nav button.active { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  main { flex: 1; overflow-y: auto; padding: 12px 18px 22px; }
+  section { display: none; }
+  section.active { display: block; }
+  .card { background: var(--card); border-radius: 22px; padding: 16px 18px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+  .muted { color: var(--sub); font-size: 12.5px; line-height: 1.55; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row .l { min-width: 0; }
+  .row .t { font-size: 15px; }
+  .btn { border: 0; border-radius: 999px; padding: 9px 18px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn.flat { background: var(--chip); color: var(--text); }
+  .btn.danger { background: transparent; color: var(--bad); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .banner { border-radius: 22px; padding: 14px 18px; margin-bottom: 12px; background: color-mix(in srgb, var(--accent) 14%, var(--card)); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .banner .t { font-size: 14px; font-weight: 600; }
+  .sess .name { font-size: 16px; font-weight: 600; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .stat { background: var(--chip); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .qr { background: #fff; border-radius: 18px; padding: 10px; width: 100%; max-width: 300px; margin: 8px auto 4px; display: block; }
+  .qr svg { width: 100%; height: auto; display: block; }
+  select { font: inherit; font-size: 14px; background: var(--chip); color: var(--text); border: 0; border-radius: 999px; padding: 8px 14px; }
+  .switch { position: relative; width: 50px; height: 30px; flex: none; }
+  .switch input { display: none; }
+  .switch span { position: absolute; inset: 0; background: var(--chip); border-radius: 999px; transition: .15s; cursor: pointer; }
+  .switch span::after { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; background: #fff; border-radius: 50%; transition: .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .switch input:checked + span { background: var(--ok); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  pre { margin: 0; font: 12px/1.55 Consolas, "Cascadia Mono", monospace; white-space: pre-wrap; word-break: break-all; user-select: text; color: var(--text); }
+  .btn.busy { display: inline-flex; align-items: center; gap: 8px; }
+  .btn.busy::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .banner.done { background: color-mix(in srgb, var(--ok) 20%, var(--card)); }
+  .addrrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .addrrow:first-child { border-top: 0; }
+  .addrrow .l { flex: 1; min-width: 0; }
+  .addrrow .ip { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .addrrow .name { color: var(--sub); font-size: 12.5px; }
+  .addrrow .x { border: 0; background: transparent; color: var(--sub); font-size: 20px; cursor: pointer; padding: 0 6px; }
+  .addrrow .switch { width: 44px; height: 26px; }
+  .addrrow .switch span::after { width: 20px; height: 20px; }
+  .addrrow .switch input:checked + span::after { transform: translateX(18px); }
+  .addform { display: flex; gap: 8px; margin-top: 10px; }
+  .addform input { flex: 1; min-width: 0; font: inherit; font-size: 14px; background: var(--chip); color: var(--text); border: 0; border-radius: 999px; padding: 9px 14px; outline: none; user-select: text; }
+  .muted,   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal.show { display: flex; }
+  .modal .box { background: var(--card, #fff); color: inherit; border-radius: 20px; padding: 20px; max-width: 360px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+  .modal h3 { margin: 0 0 8px; font-size: 16px; }
+  .modal p { margin: 0 0 14px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+  .modal .btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .toast { overflow-wrap: anywhere; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #2c2c2e; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90%; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Deskport</h1>
+  <div class="sub" id="ver">-</div>
+  <div class="pill"><span class="dot" id="dot"></span><span id="summary">確認中…</span></div>
+</header>
+<nav id="tabs">
+  <button data-tab="status" class="active">状態</button>
+  <button data-tab="pair">登録</button>
+  <button data-tab="files">ファイル</button>
+  <button data-tab="settings">設定</button>
+  <button data-tab="log">ログ</button>
+</nav>
+<main>
+  <section id="status" class="active">
+    <div class="banner" id="installBanner" hidden>
+      <div><div class="t" id="installText" title="自動起動とスタートメニューへの登録をします">まだインストールされていません</div></div>
+      <button class="btn" id="installBtn">インストール</button>
+    </div>
+    <div class="banner" id="updateBanner" hidden>
+      <div><div class="t" id="updateText" title="更新すると、ホストが再起動します">更新があります</div></div>
+      <button class="btn" id="updateBtn">更新する</button>
+    </div>
+    <div id="sessions"></div>
+    <div class="card">
+      <div class="row">
+        <div class="l"><div class="t">更新</div><div class="muted" id="updateStatus"></div></div>
+        <button class="btn flat" id="checkBtn">確認</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="pair">
+    <div class="card">
+      <h2 title="スマホのアプリの「QRで登録」で読み取ります。QRには鍵が入っているので、他の人に見せないでください">スマホを登録</h2>
+      <div class="qr" id="qr"></div>
+    </div>
+    <div class="card">
+      <h2 title="QRに入れるアドレスです。スマホは、このうち最初につながったものを使います。VPNの種類は問いません">接続先のアドレス</h2>
+      <div id="addrs"></div>
+      <form class="addform" id="addForm"><input id="addInput" placeholder="IPアドレスまたは名前を追加" autocomplete="off"><button class="btn flat" type="submit">追加</button></form>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="l"><div class="t" title="登録済みのスマホは、すべて使えなくなります">鍵を作り直す</div></div>
+        <button class="btn danger" id="regenBtn">作り直す</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="files">
+    <div class="card">
+      <h2 title="スマホから送られたファイルは、ここに保存されます。ここに入れたファイルは、スマホの「PC のファイル」に出ます">スマホとやりとりするフォルダ</h2>
+      <div class="muted" id="filesDir" style="word-break:break-all;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="filesAdd">スマホに送るファイルを追加</button>
+        <button class="btn flat" id="filesOpen">フォルダを開く</button>
+      </div>
+      <div class="muted" style="margin-top:10px">スマホ → PC: スマホの「ファイル転送」で送ると、このフォルダに保存されます。<br>PC → スマホ: ここにファイルを追加(または、フォルダに入れる)と、スマホの「PC のファイル」に出て、保存できます。</div>
+    </div>
+    <div class="card"><div id="fileList"></div></div>
+  </section>
+
+  <section id="settings">
+    <div class="card">
+      <div class="row">
+        <div class="l"><div class="t" title="高いほど滑らかですが、PCと通信の負荷が増えます。次の接続から反映されます">フレームレートの上限</div></div>
+        <select id="fps"><option value="30">30</option><option value="60">60</option><option value="120">120</option></select>
+      </div>
+      <div class="row">
+        <div class="l"><div class="t" title="端末の要求がこれより大きいときに、抑えます。次の接続から反映されます">ビットレートの上限</div></div>
+        <select id="kbps">
+          <option value="0">制限なし</option><option value="10000">10 Mbps</option><option value="20000">20 Mbps</option>
+          <option value="40000">40 Mbps</option><option value="80000">80 Mbps</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="l"><div class="t" title="窓は出さずに、トレイだけで始まります">Windows の起動時に自動で始める</div></div>
+        <label class="switch"><input type="checkbox" id="autostart"><span></span></label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="l"><div class="t">言語 / Language</div></div>
+        <select id="lang"><option value="auto">自動 / Auto</option><option value="ja">日本語</option><option value="en">English</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2 title="スマホのカメラを、PC のカメラとして、Teams や Zoom などで使えるようにします(Windows 11)">カメラ</h2>
+      <div class="row">
+        <div class="l"><div class="t" id="camState">確認中…</div></div>
+        <button class="btn" id="camToggle">有効にする</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 title="ロック画面、UAC、Ctrl+Alt+Del をスマホから操作します">ロック画面・UAC への対応</h2>
+      <div class="row">
+        <div class="l"><div class="t" id="secState">確認中…</div></div>
+        <button class="btn" id="secToggle">有効にする</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="log">
+    <div class="card"><pre id="logText">-</pre></div>
+  </section>
+</main>
+<div class="modal" id="modal"><div class="box"><h3 id="modalTitle"></h3><p id="modalText"></p><div class="btns"><button class="btn flat" id="modalNo">やめる</button><button class="btn danger" id="modalYes">続ける</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ---- 言語(日本語 / English)。画面の文字は日本語で書いてあり、英語のときだけ、表示する直前に、この辞書で置き換える。
+// 設定の「言語」で選ぶ(自動 = ブラウザ/OS の言語。日本語以外は英語)。辞書にない文字は、日本語のまま出る。
+const LANG_PREF = localStorage.getItem('lang') || 'auto';
+const LANG = LANG_PREF === 'auto' ? ((navigator.language || 'ja').toLowerCase().startsWith('ja') ? 'ja' : 'en') : LANG_PREF;
+const EN = {
+  '状態': 'Status', '登録': 'Register', '設定': 'Settings', 'ログ': 'Log', '更新': 'Update', '確認': 'Check',
+  '確認中…': 'Checking…', '待機中': 'Idle', '接続中(': 'Connected (', '台)': ' device(s))', ' · ポート ': ' · port ',
+  '接続している端末はありません': 'No devices connected', 'ディスプレイ ': 'Display ', '接続 ': 'Connected ', '切断': 'Disconnect', '符号化 ': 'Encode ',
+  'まだインストールされていません': 'Not installed yet', 'インストール': 'Install', 'インストール中…': 'Installing…', 'インストールしています': 'Installing',
+  'インストールしました。再起動します': 'Installed. Restarting', 'インストールできませんでした: ': 'Install failed: ',
+  '自動起動とスタートメニューへの登録をします': 'Sets up autostart and the Start menu entry',
+  '更新があります': 'Update available', '更新する': 'Update now', '更新すると、ホストが再起動します': 'The host restarts when updating',
+  '新しい版 v': 'New version v', ' があります': ' available', '最新です': 'Up to date', '更新できませんでした: ': 'Update failed: ', '確認できませんでした: ': 'Could not check: ',
+  'スマホを登録': 'Register phone',
+  'スマホのアプリの「QRで登録」で読み取ります。QRには鍵が入っているので、他の人に見せないでください': 'Scan this with “Register with QR” in the phone app. The QR contains the key, so do not show it to others.',
+  '接続先のアドレス': 'Host addresses',
+  'QRに入れるアドレスです。スマホは、このうち最初につながったものを使います。VPNの種類は問いません': 'Addresses included in the QR. The phone uses the first one that connects. Any VPN works.',
+  'アドレスが見つかりません': 'No addresses found', 'IPアドレスまたは名前を追加': 'Add an IP address or name', '追加': 'Add', '削除': 'Delete',
+  'すでにあります': 'Already exists', '使えない文字が含まれています': 'Contains characters that cannot be used',
+  '鍵を作り直す': 'Regenerate key', '作り直す': 'Regenerate', '登録済みのスマホは、すべて使えなくなります': 'All registered phones will stop working',
+  '鍵を作り直しますか? 登録済みのスマホは、すべて使えなくなります。': 'Regenerate the key? All registered phones will stop working.',
+  'フレームレートの上限': 'Frame rate limit', 'ビットレートの上限': 'Bitrate limit', '制限なし': 'No limit',
+  '高いほど滑らかですが、PCと通信の負荷が増えます。次の接続から反映されます': 'Higher is smoother but uses more PC and network capacity. Applies from the next connection.',
+  '端末の要求がこれより大きいときに、抑えます。次の接続から反映されます': 'Caps the bitrate when the phone asks for more. Applies from the next connection.',
+  'Windows の起動時に自動で始める': 'Start automatically when Windows starts', '窓は出さずに、トレイだけで始まります': 'Starts in the tray only, without opening the window',
+  '自動起動をオンにしました': 'Autostart turned on', '自動起動をオフにしました': 'Autostart turned off',
+  '保存しました(次の接続から反映)': 'Saved (applies from the next connection)', '保存できませんでした: ': 'Could not save: ',
+  'ログはまだありません': 'No log yet', '失敗しました: ': 'Failed: ', 'できませんでした: ': 'Failed: ', '原因不明のエラー': 'Unknown error', '完了': 'Done',
+  'カメラ': 'Camera', 'スマホのカメラを、PC のカメラとして、Teams や Zoom などで使えるようにします(Windows 11)': "Use your phone's camera as a PC camera in Teams, Zoom and more (Windows 11)",
+  'カメラを有効にしますか?': 'Enable the camera?',
+  '仮想カメラ(Windows のカメラ機能の部品)を登録します(管理者権限の確認が出ます)。有効にしている間(ホストが動いている間)、Windows に「Deskport Camera」が現れます。スマホから映像を送っていないときは、灰色の画面です。無効にすると、登録を消します。': 'This registers a virtual camera (a Windows camera component; an administrator prompt appears). While enabled (while the host is running), “Deskport Camera” appears in Windows. When the phone is not sending video, it shows a gray screen. Disabling removes the registration.',
+  '有効にしました。スマホのメニューから、カメラを送ってください': "Enabled. Send the camera from the phone's menu.",
+  'ロック画面・UAC への対応': 'Lock screen & UAC support', 'ロック画面、UAC、Ctrl+Alt+Del をスマホから操作します': 'Control the lock screen, UAC and Ctrl+Alt+Del from your phone',
+  'ロック画面・UAC への対応を有効にしますか?': 'Enable lock screen & UAC support?',
+  'SYSTEM 権限のサービスを入れます(管理者権限の確認が出ます)。有効にしている間は、このPCで動く他のプログラムも、鍵を読んで、UAC の確認を操作できてしまいます。使わないときは、無効にしてください。': 'This installs a Windows service with SYSTEM privileges (an administrator prompt appears). While enabled, other programs running on this PC can also read the key and operate UAC prompts. Disable it when you are not using it.',
+  '有効にしました。スマホは、つなぐと、自動で使います': 'Enabled. The phone uses it automatically when it connects.',
+  '有効にする': 'Enable', '無効にする': 'Disable', '有効': 'Enabled', '無効': 'Disabled', '有効(停止中)': 'Enabled (stopped)', '有効(動作中)': 'Enabled (running)',
+  '無効にしました': 'Disabled', '管理者権限の確認を待っています…': 'Waiting for the administrator prompt…',
+  '管理者権限の確認が通りませんでした': 'The administrator prompt was not approved', '有効にできませんでした': 'Could not enable', '更新はありません': 'No update available',
+  'やめる': 'Cancel', '続ける': 'Continue',
+  '言語 / Language': 'Language',
+  'ファイル': 'Files', 'スマホとやりとりするフォルダ': 'Folder shared with your phone', 'スマホに送るファイルを追加': 'Add files to send to phone', 'フォルダを開く': 'Open folder',
+  'スマホから送られたファイルは、ここに保存されます。ここに入れたファイルは、スマホの「PC のファイル」に出ます': 'Files sent from your phone are saved here. Files you put here appear in “Files on PC” on your phone.',
+  'スマホ → PC: スマホの「ファイル転送」で送ると、このフォルダに保存されます。': 'Phone → PC: files sent from the phone’s “File transfer” are saved to this folder.',
+  'PC → スマホ: ここにファイルを追加(または、フォルダに入れる)と、スマホの「PC のファイル」に出て、保存できます。': 'PC → phone: add files here (or put them in the folder) and they appear in “Files on PC” on your phone, where you can save them.',
+  'ファイルはありません': 'No files', '表示': 'Show', 'ファイルを削除しますか?': 'Delete this file?',
+  ' 件を追加しました。スマホの「PC のファイル」に出ます': ' file(s) added. They appear in “Files on PC” on your phone.',
+};
+const PHRASES = Object.entries(EN).filter(([k]) => k.length >= 2).sort((a, b) => b[0].length - a[0].length);
+const JP = /[\u3040-\u30ff\u4e00-\u9fff\uff00-\uffef]/;
+function tr(s) {
+  if (LANG !== 'en' || !s || !JP.test(s)) return s;
+  if (EN[s] !== undefined) return EN[s];
+  let out = s;
+  for (const [ja, en] of PHRASES) if (out.includes(ja)) out = out.split(ja).join(en);
+  return out;
+}
+// 画面に出る文字(テキストと、title / placeholder)を、まとめて訳す。あとから変わった分も、監視して訳す。
+function trNode(n) {
+  // ログの画面は、診断用なので、日本語のまま出す(部分的な置き換えで、不自然な文になるのを避ける)
+  const el = n.nodeType === 1 ? n : n.parentElement;
+  if (el && el.closest && el.closest('#logText')) return;
+  if (n.nodeType === 3) { const v = tr(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; return; }
+  if (n.nodeType !== 1) return;
+  for (const a of ['title', 'placeholder']) { const v = n.getAttribute(a); if (v) { const t = tr(v); if (t !== v) n.setAttribute(a, t); } }
+  n.childNodes.forEach(trNode);
+}
+if (LANG === 'en') {
+  document.documentElement.lang = 'en';
+  new MutationObserver(ms => ms.forEach(m => {
+    if (m.type === 'characterData') trNode(m.target);
+    else if (m.type === 'attributes') trNode(m.target);
+    else m.addedNodes.forEach(trNode);
+  })).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['title', 'placeholder'] });
+  trNode(document.body);
+}
+
+const invoke = window.__TAURI__.core.invoke;
+const $ = (id) => document.getElementById(id);
+let info = null, curTab = 'status', qrLoaded = false;
+
+// エラー文は、URL を除いて短くする(長いと窓のレイアウトが崩れる)
+function brief(e) {
+  let m = String(e).replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').replace(/[:：]\s*$/, '').trim();
+  return m.length > 80 ? m.slice(0, 80) + '…' : (m || '原因不明のエラー');
+}
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function dur(sec) {
+  const en = LANG === 'en';
+  if (sec < 60) return sec + (en ? 's' : '秒');
+  if (sec < 3600) return Math.floor(sec / 60) + (en ? ' min' : '分');
+  return Math.floor(sec / 3600) + (en ? ' h ' : '時間') + Math.floor(sec % 3600 / 60) + (en ? ' min' : '分');
+}
+
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  curTab = b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('active', x === b));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('active', s.id === curTab));
+  if (curTab === 'pair' && !qrLoaded) loadQr();
+  if (curTab === 'log') refreshLog();
+  if (curTab === 'files') refreshFiles();
+});
+
+async function loadInfo() {
+  info = await invoke('info');
+  $('ver').textContent = 'v' + info.version + ' · ポート ' + info.port + '(UDP)';
+  $('installBanner').hidden = info.installed;
+  $('fps').value = String(info.settings.fps);
+  $('kbps').value = String(info.settings.max_kbps);
+  $('autostart').checked = info.autostart;
+  renderAddrs();
+}
+
+function renderAddrs() {
+  const a = info.addresses;
+  $('addrs').innerHTML = a.length
+    ? a.map((x, i) => `<div class="addrrow"><div class="l"><div class="ip">${esc(x.ip)}</div><div class="name">${esc(x.label)}</div></div>` +
+        (x.extra ? `<button class="x" data-del="${i}" title="削除">×</button>`
+                 : `<label class="switch"><input type="checkbox" data-inc="${i}" ${x.included ? 'checked' : ''}><span></span></label>`) + `</div>`).join('')
+    : '<div class="muted">アドレスが見つかりません</div>';
+  document.querySelectorAll('#addrs [data-inc]').forEach(el => el.onchange = () => { a[+el.dataset.inc].included = el.checked; saveAddrs(); });
+  document.querySelectorAll('#addrs [data-del]').forEach(el => el.onclick = () => { a.splice(+el.dataset.del, 1); saveAddrs(); });
+}
+
+async function saveAddrs() {
+  const a = info.addresses;
+  try {
+    await invoke('save_addresses', { extra: a.filter(x => x.extra).map(x => x.ip), excluded: a.filter(x => !x.extra && !x.included).map(x => x.ip) });
+    await loadInfo(); qrLoaded = false; loadQr();
+  } catch (e) { toast('保存できませんでした: ' + e); }
+}
+
+$('addForm').onsubmit = (ev) => {
+  ev.preventDefault();
+  const v = $('addInput').value.trim();
+  if (!v) return;
+  if (!/^[A-Za-z0-9.:_-]+$/.test(v)) { toast('使えない文字が含まれています'); return; }
+  if (info.addresses.some(x => x.ip === v)) { toast('すでにあります'); return; }
+  info.addresses.push({ label: '追加', ip: v, included: true, extra: true });
+  $('addInput').value = '';
+  saveAddrs();
+};
+
+async function loadQr() {
+  try { $('qr').innerHTML = await invoke('pair_svg'); qrLoaded = true; }
+  catch (e) { $('qr').textContent = String(e); }
+}
+
+async function refreshLive() {
+  try {
+    const l = await invoke('live');
+    const n = l.sessions.length;
+    $('dot').classList.toggle('on', n > 0);
+    $('summary').textContent = n > 0 ? '接続中(' + new Set(l.sessions.map(s => s.peer.split(':')[0])).size + '台)' : '待機中';
+    const now = Math.floor(Date.now() / 1000);
+    $('sessions').innerHTML = n === 0
+      ? '<div class="card"><div class="muted">接続している端末はありません</div></div>'
+      : l.sessions.map(s => `<div class="card sess">
+          <div class="row" style="border:0;padding:0">
+            <div class="l"><div class="name">ディスプレイ ${s.display + 1}</div><div class="muted">${esc(s.peer)} · 接続 ${dur(Math.max(0, now - s.since))}</div></div>
+            <button class="btn danger" data-peer="${esc(s.peer)}">切断</button>
+          </div>
+          <div class="stats">
+            <span class="stat">${s.width}×${s.height}</span>
+            <span class="stat">${s.fps.toFixed(0)} fps</span>
+            <span class="stat">${s.mbps.toFixed(1)} Mbps</span>
+            <span class="stat">符号化 ${s.enc_ms.toFixed(1)} ms</span>
+          </div></div>`).join('');
+    document.querySelectorAll('#sessions [data-peer]').forEach(b => b.onclick = async () => { await invoke('disconnect', { peer: b.dataset.peer }); refreshLive(); });
+    $('updateBanner').hidden = !l.update;
+    if (l.update) $('updateText').textContent = '新しい版 v' + l.update + ' があります';
+  } catch (e) { /* 起動直後など */ }
+}
+
+async function refreshLog() {
+  if (curTab !== 'log') return;
+  const lines = await invoke('get_log');
+  const el = $('logText'), main = document.querySelector('main');
+  const atBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 40;
+  el.textContent = lines.length ? lines.join('\n') : 'ログはまだありません';
+  if (atBottom) main.scrollTop = main.scrollHeight;
+}
+
+$('installBtn').onclick = async () => {
+  const b = $('installBtn'), bn = $('installBanner');
+  b.disabled = true; b.classList.add('busy'); b.textContent = 'インストール中…';
+  $('installText').textContent = 'インストールしています';
+  try {
+    await invoke('install_here');
+    b.classList.remove('busy'); b.textContent = '完了'; bn.classList.add('done');
+    $('installText').textContent = 'インストールしました。再起動します';
+  } catch (e) {
+    b.disabled = false; b.classList.remove('busy'); b.textContent = 'インストール';
+    $('installText').textContent = 'まだインストールされていません';
+    toast('インストールできませんでした: ' + brief(e));
+  }
+};
+$('updateBtn').onclick = async () => { $('updateBtn').disabled = true; try { await invoke('apply_update'); } catch (e) { toast('更新できませんでした: ' + brief(e)); $('updateBtn').disabled = false; } };
+$('checkBtn').onclick = async () => {
+  $('checkBtn').disabled = true; $('updateStatus').textContent = '確認中…';
+  try {
+    const v = await invoke('check_update');
+    $('updateStatus').textContent = v ? '新しい版 v' + v : '最新です';
+  } catch (e) { $('updateStatus').textContent = '確認できませんでした: ' + brief(e); }
+  $('checkBtn').disabled = false; refreshLive();
+};
+$('regenBtn').onclick = async () => {
+  if (!confirm('鍵を作り直しますか? 登録済みのスマホは、すべて使えなくなります。')) return;
+  try { await invoke('regenerate_key'); } catch (e) { toast('失敗しました: ' + e); }
+};
+async function saveSettings() {
+  try { await invoke('save_settings', { fps: +$('fps').value, maxKbps: +$('kbps').value }); toast('保存しました(次の接続から反映)'); }
+  catch (e) { toast('保存できませんでした: ' + e); }
+}
+$('fps').onchange = saveSettings; $('kbps').onchange = saveSettings;
+$('autostart').onchange = async () => { await invoke('set_autostart', { on: $('autostart').checked }); toast($('autostart').checked ? '自動起動をオンにしました' : '自動起動をオフにしました'); };
+
+loadInfo().then(refreshLive);
+// ---- ロック画面・UAC への対応
+async function refreshSecure() {
+  try {
+    const st = await invoke('secure_status');
+    $('secState').textContent = st.installed ? (st.running ? '有効(動作中)' : '有効(停止中)') : '無効';
+    $('secToggle').textContent = st.installed ? '無効にする' : '有効にする';
+    $('secToggle').classList.toggle('danger', st.installed);
+  } catch (e) {}
+}
+// 警告のポップアップ(はい=true)
+function ask(title, text, yes) {
+  return new Promise((res) => {
+    $('modalTitle').textContent = title; $('modalText').textContent = text; $('modalYes').textContent = yes;
+    $('modal').classList.add('show');
+    const done = (v) => { $('modal').classList.remove('show'); res(v); };
+    $('modalYes').onclick = () => done(true); $('modalNo').onclick = () => done(false);
+  });
+}
+$('secToggle').onclick = async () => {
+  const st = await invoke('secure_status');
+  if (!st.installed && !await ask('ロック画面・UAC への対応を有効にしますか?', 'SYSTEM 権限のサービスを入れます(管理者権限の確認が出ます)。有効にしている間は、このPCで動く他のプログラムも、鍵を読んで、UAC の確認を操作できてしまいます。使わないときは、無効にしてください。', '有効にする')) return;
+  $('secToggle').disabled = true; $('secState').textContent = '管理者権限の確認を待っています…';
+  try { await invoke(st.installed ? 'secure_disable' : 'secure_enable'); toast(st.installed ? '無効にしました' : '有効にしました。スマホは、つなぐと、自動で使います'); }
+  catch (e) { toast('できませんでした: ' + brief(e)); }
+  $('secToggle').disabled = false; refreshSecure();
+};
+// ---- ファイル(スマホとやりとりするフォルダ)
+function fmtSize(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB'; }
+function fmtTime(sec) { const d = new Date(sec * 1000); return d.toLocaleString(LANG === 'en' ? 'en-US' : 'ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+async function refreshFiles() {
+  try {
+    const r = await invoke('files_info');
+    $('filesDir').textContent = r.dir;
+    const list = $('fileList');
+    if (!r.files.length) { list.innerHTML = '<div class="muted">ファイルはありません</div>'; return; }
+    list.innerHTML = r.files.slice(0, 100).map((f, i) => `<div class="row" style="${i === 0 ? 'border:0;padding-top:0' : ''}">
+      <div class="l" style="min-width:0"><div class="t" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</div><div class="muted">${fmtSize(f.size)} · ${fmtTime(f.mtime)}</div></div>
+      <div style="display:flex;gap:6px"><button class="btn flat" data-show="${esc(f.name)}">表示</button><button class="btn danger" data-del="${esc(f.name)}">削除</button></div></div>`).join('');
+    list.querySelectorAll('[data-show]').forEach(b => b.onclick = () => invoke('files_reveal', { name: b.dataset.show }));
+    list.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+      if (!await ask('ファイルを削除しますか?', b.dataset.del, '削除')) return;
+      try { await invoke('files_delete', { name: b.dataset.del }); } catch (e) { toast('できませんでした: ' + brief(e)); }
+      refreshFiles();
+    });
+  } catch (e) {}
+}
+$('filesOpen').onclick = () => invoke('files_open_dir');
+$('filesAdd').onclick = async () => {
+  $('filesAdd').disabled = true;
+  try { const n = await invoke('files_add'); if (n > 0) toast(n + ' 件を追加しました。スマホの「PC のファイル」に出ます'); } catch (e) { toast('できませんでした: ' + brief(e)); }
+  $('filesAdd').disabled = false; refreshFiles();
+};
+setInterval(() => { if (curTab === 'files') refreshFiles(); }, 2500);
+
+// ---- カメラ(スマホのカメラを PC のカメラにする)
+async function refreshCam() {
+  try {
+    const on = await invoke('camera_status');
+    $('camState').textContent = on ? '有効' : '無効';
+    $('camToggle').textContent = on ? '無効にする' : '有効にする';
+    $('camToggle').classList.toggle('danger', on);
+  } catch (e) {}
+}
+$('camToggle').onclick = async () => {
+  const on = await invoke('camera_status');
+  if (!on && !await ask('カメラを有効にしますか?', '仮想カメラ(Windows のカメラ機能の部品)を登録します(管理者権限の確認が出ます)。有効にしている間(ホストが動いている間)、Windows に「Deskport Camera」が現れます。スマホから映像を送っていないときは、灰色の画面です。無効にすると、登録を消します。', '有効にする')) return;
+  $('camToggle').disabled = true; $('camState').textContent = '管理者権限の確認を待っています…';
+  try { await invoke(on ? 'camera_disable' : 'camera_enable'); toast(on ? '無効にしました' : '有効にしました。スマホのメニューから、カメラを送ってください'); }
+  catch (e) { toast('できませんでした: ' + brief(e)); }
+  $('camToggle').disabled = false; refreshCam();
+};
+$('lang').value = LANG_PREF;
+$('lang').onchange = () => { localStorage.setItem('lang', $('lang').value); location.reload(); };
+refreshCam(); setInterval(refreshCam, 3000);
+refreshSecure(); setInterval(refreshSecure, 3000);
+
+setInterval(refreshLive, 1000);
+setInterval(refreshLog, 1500);
+</script>
+</body>
+</html>

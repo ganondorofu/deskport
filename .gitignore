@@ -1,0 +1,24 @@
+# ビルドの出力
+build/
+.gradle/
+.kotlin/
+.cxx/
+host/target/
+host/gen/
+*.apk
+*.aab
+out.h265
+dist/
+
+# 端末ごとの設定(SDK の場所など)
+local.properties
+.idea/
+*.iml
+
+# 署名鍵・合言葉(リポジトリには入れない。置き場所は、リポジトリの隣の deskport-keys)
+*.jks
+*.keystore
+keystore.properties
+release.key
+secret.txt
+vcam/target/

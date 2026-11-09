@@ -1,0 +1,39 @@
+[package]
+name = "deskport-vcam"
+version = "0.1.0"
+edition = "2021"
+description = "Deskport virtual camera (Windows 11 Media Foundation virtual camera media source)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+windows = { version = "0.58", features = [
+  "implement",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_Foundation",
+  "Win32_Media_MediaFoundation",
+  "Win32_Media_KernelStreaming",
+  "Win32_System_Com",
+  "Win32_System_Registry",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Threading",
+  "Win32_System_Variant",
+  "Win32_System_Memory",
+  "Win32_Storage_FileSystem",
+  "Win32_Security",
+  "Win32_System_IO",
+  "Win32_UI_Shell_PropertiesSystem",
+] }
+windows-core = "0.58"
+windows-implement = "0.58"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+
+[[bin]]
+name = "vcam-tool"
+path = "src/bin/vcam_tool.rs"
+
