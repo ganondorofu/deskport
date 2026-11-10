@@ -108,7 +108,7 @@ object Stream {
         private set
 
     fun reportCursor(k: Int, x: Int, y: Int) {
-        if (nativeDisplays.size != 1 || k !in nativeDisplays) return
+        if (nativeDisplays.size != 1 || k !in nativeDisplays) { if (cursorOffscreen != null && nativeDisplays.size != 1) cursorOffscreen = null; return }
         val w = hostW[k]; val h = hostH[k]
         cursorOffscreen = if (x in 0 until w && y in 0 until h) null
         else ((x - w / 2f) / (w / 2f)) to ((y - h / 2f) / (h / 2f))
@@ -179,7 +179,7 @@ object Stream {
             },
         )
         synchronized(lock) { receivers[k] = r }
-        if (k !in nativeDisplays) nativeDisplays.add(k)
+        if (k !in nativeDisplays) { nativeDisplays.add(k); cursorOffscreen = null }   // 表示するディスプレイが変わったら、前の矢印は消す
         r.start()
     }
 
@@ -220,7 +220,7 @@ object Stream {
         scope.launch(Dispatchers.IO) { dead?.stop() }
         val wanted = nativeDisplays.contains(k)
         if (h == null || !native || !wanted || n > 5) {
-            nativeDisplays.remove(k)
+            nativeDisplays.remove(k); cursorOffscreen = null
             if (synchronized(lock) { receivers.isEmpty() }) fail(msg)
             return
         }
@@ -248,7 +248,7 @@ object Stream {
     private fun stopNative(ks: List<Int>) {
         if (ks.isEmpty()) return
         val rs = synchronized(lock) { ks.mapNotNull { receivers.remove(it) } }
-        nativeDisplays.removeAll(ks.toSet())
+        nativeDisplays.removeAll(ks.toSet()); cursorOffscreen = null
         scope.launch(Dispatchers.IO) {
             // 新しい配信の音が届くまで(最大1.5秒)、古い配信を止めない。切り替えで、音が途切れないように
             if (StreamSettings.audio) {
@@ -296,7 +296,7 @@ object Stream {
         job?.cancel()
         run {
             val rs = synchronized(lock) { receivers.values.toList().also { receivers.clear(); awaiting.clear(); pendingStop.clear() } }
-            nativeDisplays.clear()
+            nativeDisplays.clear(); cursorOffscreen = null
             withContext(Dispatchers.IO) { rs.forEach { it.stop() } }
             AudioPlayer.stop()
             native = false

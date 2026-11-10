@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.ganondorofu.deskport"
         minSdk = 34
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
     }
     // 公開用の署名鍵は、リポジトリの外(環境変数 DESKPORT_KEYS のフォルダ。なければ、リポジトリの隣の deskport-keys の keystore.properties)に置く。なければ debug 署名になる
     // (注意: 更新できるのは、同じ鍵で署名したアプリだけ。鍵をなくすと、更新を出せなくなる)
